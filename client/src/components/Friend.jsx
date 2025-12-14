@@ -1,4 +1,4 @@
-import { MdPersonAddOutlined, MdPersonRemoveOutlined } from "react-icons/md";
+import { MdPersonAdd, MdPersonRemove } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setFriends } from "state";
@@ -51,9 +51,9 @@ const Friend = ({ friendId, name, subtitle, userPicturePath }) => {
                     className="p-2 bg-primary/10 rounded-full hover:bg-primary/20 transition text-primary"
                 >
                     {isFriend ? (
-                        <MdPersonRemoveOutlined className="text-xl" />
+                        <MdPersonRemove className="text-xl" />
                     ) : (
-                        <MdPersonAddOutlined className="text-xl" />
+                        <MdPersonAdd className="text-xl" />
                     )}
                 </button>
             )}

@@ -99,6 +99,7 @@ const Form = () => {
             onSubmit={handleFormSubmit}
             initialValues={isLogin ? initialValuesLogin : initialValuesRegister}
             validationSchema={isLogin ? loginSchema : registerSchema}
+            enableReinitialize
         >
             {({
                 values,
