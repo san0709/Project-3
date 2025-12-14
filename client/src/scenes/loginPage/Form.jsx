@@ -1,0 +1,224 @@
+import { useState } from "react";
+import {
+    MdEdit,
+} from "react-icons/md";
+import { Formik } from "formik";
+import * as yup from "yup";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setLogin } from "state";
+import Dropzone from "react-dropzone";
+import FlexBetween from "components/FlexBetween";
+
+const registerSchema = yup.object().shape({
+    firstName: yup.string().required("required"),
+    lastName: yup.string().required("required"),
+    email: yup.string().email("invalid email").required("required"),
+    password: yup.string().required("required"),
+    location: yup.string().required("required"),
+    occupation: yup.string().required("required"),
+    picture: yup.string().required("required"),
+});
+
+const loginSchema = yup.object().shape({
+    email: yup.string().email("invalid email").required("required"),
+    password: yup.string().required("required"),
+});
+
+const initialValuesRegister = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    location: "",
+    occupation: "",
+    picture: "",
+};
+
+const initialValuesLogin = {
+    email: "",
+    password: "",
+};
+
+const Form = () => {
+    const [pageType, setPageType] = useState("login");
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const isLogin = pageType === "login";
+    const isRegister = pageType === "register";
+
+    const register = async (values, onSubmitProps) => {
+        // this allows us to send form info with image
+        const formData = new FormData();
+        for (let value in values) {
+            formData.append(value, values[value]);
+        }
+        formData.append("picturePath", values.picture.name);
+
+        const savedUserResponse = await fetch(
+            "http://localhost:3001/auth/register",
+            {
+                method: "POST",
+                body: formData,
+            }
+        );
+        const savedUser = await savedUserResponse.json();
+        onSubmitProps.resetForm();
+
+        if (savedUser) {
+            setPageType("login");
+        }
+    };
+
+    const login = async (values, onSubmitProps) => {
+        const loggedInResponse = await fetch("http://localhost:3001/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(values),
+        });
+        const loggedIn = await loggedInResponse.json();
+        onSubmitProps.resetForm();
+        if (loggedIn) {
+            dispatch(
+                setLogin({
+                    user: loggedIn.user,
+                    token: loggedIn.token,
+                })
+            );
+            navigate("/home");
+        }
+    };
+
+    const handleFormSubmit = async (values, onSubmitProps) => {
+        if (isLogin) await login(values, onSubmitProps);
+        if (isRegister) await register(values, onSubmitProps);
+    };
+
+    return (
+        <Formik
+            onSubmit={handleFormSubmit}
+            initialValues={isLogin ? initialValuesLogin : initialValuesRegister}
+            validationSchema={isLogin ? loginSchema : registerSchema}
+        >
+            {({
+                values,
+                errors,
+                touched,
+                handleBlur,
+                handleChange,
+                handleSubmit,
+                setFieldValue,
+                resetForm,
+            }) => (
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    {isRegister && (
+                        <>
+                            <div className="flex gap-4">
+                                <input
+                                    placeholder="First Name"
+                                    onBlur={handleBlur}
+                                    onChange={handleChange}
+                                    value={values.firstName}
+                                    name="firstName"
+                                    className="w-full border p-2 rounded"
+                                />
+                                {touched.firstName && errors.firstName && <div className="text-red-500 text-xs">{errors.firstName}</div>}
+
+                                <input
+                                    placeholder="Last Name"
+                                    onBlur={handleBlur}
+                                    onChange={handleChange}
+                                    value={values.lastName}
+                                    name="lastName"
+                                    className="w-full border p-2 rounded"
+                                />
+                            </div>
+
+                            <input
+                                placeholder="Location"
+                                onBlur={handleBlur}
+                                onChange={handleChange}
+                                value={values.location}
+                                name="location"
+                                className="w-full border p-2 rounded"
+                            />
+                            <input
+                                placeholder="Occupation"
+                                onBlur={handleBlur}
+                                onChange={handleChange}
+                                value={values.occupation}
+                                name="occupation"
+                                className="w-full border p-2 rounded"
+                            />
+
+                            <div className="border border-neutral-medium rounded p-4">
+                                <Dropzone
+                                    acceptedFiles=".jpg,.jpeg,.png"
+                                    multiple={false}
+                                    onDrop={(acceptedFiles) =>
+                                        setFieldValue("picture", acceptedFiles[0])
+                                    }
+                                >
+                                    {({ getRootProps, getInputProps }) => (
+                                        <div {...getRootProps()} className="border-2 border-dashed p-4 cursor-pointer text-center">
+                                            <input {...getInputProps()} />
+                                            {!values.picture ? (
+                                                <p>Add Picture Here</p>
+                                            ) : (
+                                                <FlexBetween>
+                                                    <span>{values.picture.name}</span>
+                                                    <MdEdit />
+                                                </FlexBetween>
+                                            )}
+                                        </div>
+                                    )}
+                                </Dropzone>
+                            </div>
+                        </>
+                    )}
+
+                    <input
+                        placeholder="Email"
+                        onBlur={handleBlur}
+                        onChange={handleChange}
+                        value={values.email}
+                        name="email"
+                        className="w-full border p-2 rounded"
+                    />
+                    {touched.email && errors.email && <div className="text-red-500 text-xs">{errors.email}</div>}
+
+                    <input
+                        placeholder="Password"
+                        type="password"
+                        onBlur={handleBlur}
+                        onChange={handleChange}
+                        value={values.password}
+                        name="password"
+                        className="w-full border p-2 rounded"
+                    />
+
+                    <button
+                        type="submit"
+                        className="w-full bg-primary text-white p-3 rounded font-bold hover:bg-secondary transition"
+                    >
+                        {isLogin ? "LOGIN" : "REGISTER"}
+                    </button>
+
+                    <div
+                        onClick={() => {
+                            setPageType(isLogin ? "register" : "login");
+                            resetForm();
+                        }}
+                        className="text-primary underline cursor-pointer self-center"
+                    >
+                        {isLogin
+                            ? "Don't have an account? Sign Up here."
+                            : "Already have an account? Login here."}
+                    </div>
+                </form>
+            )}
+        </Formik>
+    );
+};
+
+export default Form;
